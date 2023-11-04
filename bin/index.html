@@ -1,0 +1,105 @@
+<html>
+  <head>
+    <title>Repository By Language</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+  </head>
+  <body>
+
+    <py-config>
+      packages = ["matplotlib", "pandas"]
+    </py-config>
+
+    <py-script>
+      import js
+      import pandas as pd
+      import matplotlib.pyplot as plt
+
+      from pyodide.http import open_url
+      from pyodide.ffi import create_proxy
+
+      url = (
+          "http://localhost/repo.csv"
+      )
+      repo_data = pd.read_csv(open_url(url))
+
+      url = (
+          "http://localhost/language.csv"
+      )
+      language_dict = {"unclass": 0}
+      language_data = pd.read_csv(open_url(url))
+      current_selected = []
+      flavour_elements = js.document.getElementsByName("flavour")
+
+      def classify(repo_data, language_data):
+          for repo in repo_data.iterrows():
+            data = str(repo[0])
+            name = data.split('-')
+            language_name = str(data[0])
+            if language_name in language_data:
+              if language_name in language_dict:
+                language_dict[language_name] += 1
+              else:
+                language_dict[language_name] = 1
+            else:
+              language_dict['unclass'] += 1
+          return language_dict
+
+      def plot(language_dict):
+          name = [for x in language_dict.keys()]
+          print(name)
+          # count = [for x in language_dict.values()]
+          # plt.rcParams["figure.figsize"] = (22,20)
+          # fig, ax = plt.subplots()
+          # bars = ax.barh(name, count, height=0.7)
+          # ax.bar_label(bars)
+          # plt.title("Repo languages")
+          # display(fig, target="graph-area", append=False)
+
+      def select_flavour(event):
+          for ele in flavour_elements:
+              if ele.checked:
+                  current_selected = ele.value
+                  break
+          if current_selected == "ALL":
+              plot(language_dict)
+          else:
+              filter = repo_data.apply(lambda x: ele.value in x["Name"], axis=1)
+              # plot(repo_data[filter])
+
+      ele_proxy = create_proxy(select_flavour)
+
+      for ele in flavour_elements:
+          if ele.value == "ALL":
+            ele.checked = True
+            current_selected = ele.value
+          ele.addEventListener("change", ele_proxy)
+
+      language_dict = classify(repo_data, language_data)
+      plot(language_dict)
+
+    </py-script>
+    <div id="input" style="margin: 20px;">
+      Select your 🍨 flavour: <br/>
+      <input type="radio" id="all" name="flavour" value="ALL">
+      <label for="all"> All 🍧</label>
+      <input type="radio" id="chocolate" name="flavour" value="COCOA">
+      <label for="chocolate"> Chocolate 🍫</label>
+      <input type="radio" id="cherry" name="flavour" value="CHERRIES">
+      <label for="cherry"> Cherries 🍒</label>
+      <input type="radio" id="berries" name="flavour" value="BERRY">
+      <label for="berries"> Berries 🍓</label>
+      <input type="radio" id="cheese" name="flavour" value="CHEESE">
+      <label for="cheese"> Cheese 🧀</label>
+      <input type="radio" id="peanut" name="flavour" value="PEANUT">
+      <label for="peanut"> Peanut 🥜</label>
+    </div>
+
+    <py-repl>
+      ice_data
+    </py-repl>
+
+    <div id="graph-area"></div>
+  </body>
+</html>
